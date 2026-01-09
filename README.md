@@ -76,16 +76,12 @@ git clone https://github.com/nataliahopee/monitoring-absensi-paket.git
 cd monitoring-absensi-piket
 ```
 
----
-
 ### 2️⃣ Install Dependency
 
 ```bash
 composer install
 npm install
 ```
-
----
 
 ### 3️⃣ Konfigurasi Environment
 
@@ -96,15 +92,11 @@ DB_DATABASE=absensi-piket-db
 php artisan key:generate
 ```
 
----
-
 ### 4️⃣ Migrasi & Seeder
 
 ```bash
 php artisan migrate --seed
 ```
-
----
 
 ### 5️⃣ Jalankan Server
 
