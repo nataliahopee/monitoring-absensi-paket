@@ -22,7 +22,7 @@
             </div>
         </div>
 
-        {{-- RFID listener panel (letakkan di bawah header) --}}
+        {{-- RFID listener panel --}}
         <div class="mb-4 flex items-center justify-between space-x-4">
         <div class="flex items-center space-x-3">
             <label class="text-sm text-gray-600">Mode RFID:</label>
