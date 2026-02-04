@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Models\Pegawai;
 use App\Models\AbsensiPiket;
+use App\Models\RfidUnregisteredLog;
 
 class AbsensiTapController extends Controller
 {
@@ -18,10 +19,29 @@ class AbsensiTapController extends Controller
         ]);
 
         $rfid = $data['rfid_uid'];
-
+        
         $pegawai = Pegawai::where('rfid_uid', $rfid)->first();
         if (! $pegawai) {
-            return response()->json(['message' => 'Kartu tidak terdaftar'], 404);
+            // upsert pending log: jika sudah ada pending, update detected_at; jika belum, insert
+            $log = RfidUnregisteredLog::where('rfid_uid', $rfid)
+                ->where('status', 'pending')
+                ->first();
+
+            if ($log) {
+                $log->update(['detected_at' => Carbon::now()]);
+            } else {
+                RfidUnregisteredLog::create([
+                    'rfid_uid' => $rfid,
+                    'detected_at' => Carbon::now(),
+                    'status' => 'pending',
+                ]);
+            }
+
+            return response()->json([
+                'status' => 'unregistered',
+                'message' => 'Kartu belum terdaftar',
+                'rfid_uid' => $rfid,
+            ], 200);
         }
 
         $today = Carbon::now()->toDateString();

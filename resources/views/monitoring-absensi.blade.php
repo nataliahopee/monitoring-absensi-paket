@@ -1,44 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <link rel="icon" href="{{ asset('assets/images/ciamislogo.png') }}">
     <title>Monitoring Absensi Piket</title>
     @vite(['resources/css/app.css'])
     <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <!-- SweetAlert2 (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-gray-50 text-gray-800">
     <div class="max-w-6xl mx-auto p-6">
-        <div class="md:flex md:justify-between">
+        {{-- HEADER + BELL --}}
+        <div class="md:flex md:justify-between items-start">
             <div>
                 <header class="mb-6">
                     <h1 class="text-2xl font-semibold">Monitoring Absensi Piket</h1>
                     <p class="mt-1 text-sm text-gray-600">Tabel absensi piket: check-in & check-out</p>
                 </header>
             </div>
-            <div class="hover:text-red-500 cursor-pointer">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bell-icon lucide-bell"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
+
+            {{-- Bell + Dropdown --}}
+            <div class="relative">
+                <button id="bell-btn" class="relative p-2 rounded hover:bg-gray-100 focus:outline-none cursor-pointer" aria-label="Notifikasi RFID">
+                    <!-- bell svg -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bell">
+                        <path d="M10.268 21a2 2 0 0 0 3.464 0"/>
+                        <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>
+                    </svg>
+
+                    <span id="bell-badge" class="hidden absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1">0</span>
+                </button>
+
+                <!-- dropdown -->
+                <div id="bell-dropdown" class="hidden absolute right-0 mt-2 w-96 bg-white shadow-lg rounded-lg z-50">
+                    <div class="p-3 border-b font-medium bg-teal-500 text-white rounded-t-lg">Notifikasi Kartu Tidak Terdaftar</div>
+                    <div id="bell-list" class="max-h-64 overflow-auto p-2 text-sm">
+                        <!-- items injected by JS -->
+                        <div class="text-center text-gray-500 py-4">Memuat...</div>
+                    </div>
+                    <div class="border-t p-3 text-center">
+                        <a href="{{ route('rfid.unregistered.index') }}" class="text-sm text-teal-500 hover:underline">Selengkapnya</a>
+                    </div>
+                </div>
             </div>
         </div>
 
         {{-- RFID listener panel --}}
         <div class="mb-4 flex items-center justify-between space-x-4">
-        <div class="flex items-center space-x-3">
-            <label class="text-sm text-gray-600">Mode RFID:</label>
-            <div id="rfid-status" class="text-sm px-3 py-1 rounded bg-green-100 text-green-800">Siap menerima (Focus pada halaman)</div>
-        </div>
+            <div class="flex items-center space-x-3">
+                <label class="text-sm text-gray-600">Mode RFID:</label>
+                <div id="rfid-status" class="text-sm px-3 py-1 rounded bg-green-100 text-green-800">Siap menerima (Focus pada halaman)</div>
+            </div>
 
-        <div class="flex items-center space-x-3">
-            <div id="last-scan" class="text-sm text-gray-600">Belum ada tap</div>
-            <button id="focus-btn" type="button" class="px-3 py-1 text-sm border rounded hover:bg-gray-50">Fokuskan input</button>
-        </div>
+            <div class="flex items-center space-x-3">
+                <div id="last-scan" class="text-sm text-gray-600">Belum ada tap</div>
+                <button id="focus-btn" type="button" class="px-3 py-1 text-sm border rounded hover:bg-gray-50">Fokuskan input</button>
+            </div>
         </div>
 
         <!-- Invisible input yang akan diisi oleh USB RFID reader (keyboard emulator) -->
-        <input id="rfid-input" type="text" autocomplete="off"
-            class="absolute opacity-0 pointer-events-none" aria-hidden="true">
-
+        <input id="rfid-input" type="text" autocomplete="off" class="absolute opacity-0 pointer-events-none" aria-hidden="true">
 
         {{-- Controls: per-page selector + Search form --}}
         <form method="GET" action="{{ route('monitoring.index') }}" class="mb-4 grid grid-cols-1 md:grid-cols-2 md:justify-between gap-3 items-center">
@@ -65,7 +89,7 @@
                         class="w-full rounded border-gray-300 shadow-sm focus:ring-2 focus:ring-amber-200 p-2 bg-white"
                     >
                 </div>
-    
+
                 {{-- Date + Buttons --}}
                 <div class="flex items-center space-x-2">
                     <input
@@ -74,7 +98,7 @@
                         value="{{ old('date', $date ?? '') }}"
                         class="rounded border-gray-300 shadow-sm focus:ring-2 focus:ring-amber-200 p-2 bg-white"
                     >
-    
+
                     <button type="submit"
                         class="inline-flex items-center px-4 py-2 bg-amber-600 text-white rounded hover:bg-amber-700 cursor-pointer">
                         <!-- search icon -->
@@ -83,7 +107,7 @@
                         </svg>
                         Cari
                     </button>
-    
+
                     <a href="{{ route('monitoring.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-400 rounded text-gray-700 hover:bg-gray-100">
                         <!-- reset icon -->
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -152,9 +176,15 @@
                 <div class="flex items-center space-x-2">
                     {{-- Previous button --}}
                     @if ($absensis->onFirstPage())
-                        <span class="px-3 py-1 rounded border border-gray-400 text-gray-400 bg-white text-sm">Previous</span>
+                        <span class="px-3 py-1 rounded border border-gray-400 text-gray-400 bg-white text-sm flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left-icon lucide-chevron-left"><path d="m15 18-6-6 6-6"/></svg>
+                            Previous
+                        </span>
                     @else
-                        <a href="{{ $absensis->previousPageUrl() }}" class="px-3 py-1 rounded border border-gray-400 bg-white hover:bg-gray-100 text-sm">Previous</a>
+                        <a href="{{ $absensis->previousPageUrl() }}" class="px-3 py-1 rounded border border-orange-400 bg-white hover:bg-orange-50 text-sm text-orange-400 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left-icon lucide-chevron-left"><path d="m15 18-6-6 6-6"/></svg>
+                            Previous
+                        </a>
                     @endif
 
                     {{-- Current page / last page --}}
@@ -162,108 +192,343 @@
 
                     {{-- Next button --}}
                     @if ($absensis->hasMorePages())
-                        <a href="{{ $absensis->nextPageUrl() }}" class="px-3 py-1 rounded border border-gray-400 bg-white hover:bg-gray-100 text-sm">Next</a>
+                        <a href="{{ $absensis->nextPageUrl() }}" class="px-3 py-1 rounded border border-orange-400 bg-white hover:bg-orange-50 text-sm text-orange-400 flex items-center gap-2">
+                            Next
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right-icon lucide-chevron-right"><path d="m9 18 6-6-6-6"/></svg>
+                        </a>
                     @else
-                        <span class="px-3 py-1 rounded border border-gray-400 text-gray-400 bg-white text-sm">Next</span>
+                        <span class="px-3 py-1 rounded border border-gray-400 text-gray-400 bg-white text-sm flex items-center gap-2">
+                            Next
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right-icon lucide-chevron-right"><path d="m9 18 6-6-6-6"/></svg>
+                        </span>
                     @endif
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Toast container (kept for compatibility) -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 </body>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const input = document.getElementById('rfid-input');
-  const statusEl = document.getElementById('rfid-status');
-  const lastScanEl = document.getElementById('last-scan');
-  const focusBtn = document.getElementById('focus-btn');
+    // Elements
+    const input = document.getElementById('rfid-input');
+    const statusEl = document.getElementById('rfid-status');
+    const lastScanEl = document.getElementById('last-scan');
+    const focusBtn = document.getElementById('focus-btn');
 
-  // Ambil CSRF token dari meta (jika ada)
-  const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
-  const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : null;
+    const bellBtn = document.getElementById('bell-btn');
+    const bellBadge = document.getElementById('bell-badge');
+    const bellDropdown = document.getElementById('bell-dropdown');
+    const bellList = document.getElementById('bell-list');
+    const toastContainer = document.getElementById('toast-container');
 
-  // Pastikan input fokus saat halaman siap
-  function focusInput() {
-    // input.classList.remove('opacity-0'); // jangan tunjukkan input
-    input.focus();
-    statusEl.textContent = 'Siap menerima (fokus aktif)';
-    statusEl.className = 'text-sm px-3 py-1 rounded bg-green-100 text-green-800';
-  }
+    // CSRF token
+    const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+    const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : null;
 
-  focusBtn.addEventListener('click', () => {
-    focusInput();
-  });
-
-  // Fokus otomatis saat load
-  focusInput();
-
-  // Handler saat Enter ditekan di input (reader biasanya mengirimkan Enter otomatis)
-  input.addEventListener('keydown', async (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-
-      const raw = input.value.trim();
-      input.value = ''; // reset input
-      if (!raw) return;
-
-      // tampilkan sementara
-      lastScanEl.textContent = `Terbaca: ${raw}`;
-      statusEl.textContent = 'Memproses...';
-      statusEl.className = 'text-sm px-3 py-1 rounded bg-amber-100 text-amber-800';
-
-      try {
-        const res = await fetch('{{ url('/api/absensi/tap') }}', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            // kirim CSRF kalau ada (aman untuk dev)
-            ...(csrfToken ? {'X-CSRF-TOKEN': csrfToken} : {}),
-          },
-          body: JSON.stringify({ rfid_uid: raw })
+    // set up SweetAlert2 toast helper
+    function showToast(message, icon = 'info', ttl = 2500) {
+        // icon: 'success' | 'error' | 'warning' | 'info' | 'question'
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: ttl,
+            icon: icon,
+            title: message,
+            customClass: { popup: 'text-sm' }
         });
+    }
 
-        const data = await res.json().catch(() => ({}));
+    // ensure input exists and focus
+    function focusInput() {
+        input.focus();
+        statusEl.textContent = 'Siap menerima (fokus aktif)';
+        statusEl.className = 'text-sm px-3 py-1 rounded bg-green-100 text-green-800';
+    }
 
-        if (res.ok) {
-          // sukses
-          statusEl.textContent = data.message || 'Tercatat';
-          statusEl.className = 'text-sm px-3 py-1 rounded bg-green-100 text-green-800';
-          lastScanEl.textContent = `Terbaca: ${raw} — ${data.status ?? ''}`;
+    focusBtn.addEventListener('click', () => focusInput());
+    focusInput();
 
-          // opsi: reload supaya data baru muncul di tabel
-          // kamu bisa set ke true/false sesuai kebutuhan
-          const autoRefresh = true;
-          if (autoRefresh) {
-            // beri 700ms jeda biar user lihat pesan
-            setTimeout(() => { window.location.reload(); }, 700);
-          }
-        } else {
-          // error (mis. kartu tidak terdaftar)
-          statusEl.textContent = data.message || 'Terjadi error';
-          statusEl.className = 'text-sm px-3 py-1 rounded bg-red-100 text-red-700';
-          lastScanEl.textContent = `Terbaca: ${raw} — ${data.message ?? 'Error'}`;
+    // Fetch pending logs (count + latest 5)
+    async function fetchPending() {
+        try {
+            const res = await fetch('{{ url('/api/rfid-unregistered/pending') }}', {
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!res.ok) return;
+            const json = await res.json();
+            const count = json.count || 0;
+
+            if (count > 0) {
+                bellBadge.textContent = count;
+                bellBadge.classList.remove('hidden');
+            } else {
+                bellBadge.classList.add('hidden');
+            }
+
+            // populate list
+            bellList.innerHTML = '';
+            const latest = json.latest || [];
+            if (latest.length === 0) {
+                bellList.innerHTML = '<div class="text-center text-gray-500 py-4">Tidak ada notifikasi</div>';
+            } else {
+                latest.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-start justify-between p-3 border-b hover:bg-gray-50';
+
+                    row.innerHTML = `
+                        <div class="flex items-start space-x-3">
+                            <!-- Icon kiri -->
+                            <div class="mt-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-credit-card-icon lucide-credit-card"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                            </div>
+
+                            <!-- Info -->
+                            <div>
+                                <div class="font-medium text-sm">${item.rfid_uid}</div>
+                                <div class="text-xs text-gray-500">
+                                    ${new Date(item.detected_at).toLocaleString()}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex items-center space-x-2">
+                            <!-- Register (icon) -->
+                            <button
+                                title="Daftarkan"
+                                data-uid="${item.rfid_uid}"
+                                class="register-btn p-1 rounded hover:bg-sky-100 text-sky-600 cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus-icon lucide-user-plus"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+                            </button>
+
+                            <!-- Ignore (icon) -->
+                            <button
+                                title="Abaikan"
+                                data-id="${item.id}"
+                                class="ignore-btn p-1 rounded hover:bg-red-100 text-red-600 cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eraser-icon lucide-eraser"><path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21"/><path d="m5.082 11.09 8.828 8.828"/></svg>
+                            </button>
+                        </div>
+                    `;
+
+                    bellList.appendChild(row);
+                });
+            }
+        } catch (err) {
+            console.error('fetchPending error', err);
         }
-      } catch (err) {
-        console.error(err);
-        statusEl.textContent = 'Gagal kirim ke server';
-        statusEl.className = 'text-sm px-3 py-1 rounded bg-red-100 text-red-700';
-        lastScanEl.textContent = `Terbaca: ${raw} — (gagal koneksi)`;
-      } finally {
-        // fokus kembali
-        setTimeout(() => input.focus(), 100);
-      }
     }
-  });
 
-  // jika fokus hilang, kembalikan fokus saat area diklik
-  document.addEventListener('click', () => {
-    if (document.activeElement !== input) {
-      // jangan paksa jika user sedang isi form lain
-      input.focus();
-    }
-  });
+    // Toggle dropdown
+    bellBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        bellDropdown.classList.toggle('hidden');
+        if (!bellDropdown.classList.contains('hidden')) {
+            await fetchPending();
+        }
+    });
+
+    // Close dropdown if click outside
+    document.addEventListener('click', () => {
+        bellDropdown.classList.add('hidden');
+    });
+
+    // Delegate click on bellList (register / ignore) - using closest to support SVG clicks
+    bellList.addEventListener('click', async (e) => {
+        const ignoreBtn = e.target.closest('.ignore-btn');
+        const registerBtn = e.target.closest('.register-btn');
+
+        // IGNORE (use SweetAlert2 confirm)
+        if (ignoreBtn) {
+            const id = ignoreBtn.getAttribute('data-id');
+            const { isConfirmed } = await Swal.fire({
+                title: 'Hapus log?',
+                text: 'Log akan ditandai sebagai diabaikan. Lanjutkan?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, hapus',
+                cancelButtonText: 'Batal'
+            });
+            if (!isConfirmed) return;
+
+            try {
+                const res = await fetch(`{{ url('/api/rfid-unregistered') }}/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (res.ok) {
+                    showToast('Log dihapus', 'success');
+                    await fetchPending();
+                } else {
+                    showToast('Gagal menghapus', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal koneksi', 'error');
+            }
+        }
+
+        // REGISTER (use SweetAlert2 input modal)
+        if (registerBtn) {
+            const uid = registerBtn.getAttribute('data-uid');
+
+            const { value: nama } = await Swal.fire({
+                title: `Daftarkan UID ${uid}`,
+                input: 'text',
+                inputLabel: 'Nama Pegawai',
+                inputPlaceholder: 'Masukkan nama pegawai',
+                showCancelButton: true,
+                confirmButtonText: 'Daftarkan',
+                cancelButtonText: 'Batal',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Nama pegawai wajib diisi';
+                    }
+                }
+            });
+
+            if (!nama) return; // cancelled
+
+            // send register request
+            try {
+                const res = await fetch('{{ url('/api/rfid-unregistered/register') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        rfid_uid: uid,
+                        nama_pegawai: nama
+                    })
+                });
+
+                if (res.ok) {
+                    showToast('Pegawai berhasil didaftarkan', 'success');
+                    await fetchPending();
+                    setTimeout(() => window.location.reload(), 600);
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    showToast(data.message || 'Gagal mendaftar', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal koneksi', 'error');
+            }
+        }
+    });
+
+    // Polling every 8s
+    setInterval(fetchPending, 8000);
+    fetchPending(); // initial
+
+    // RFID input handler (reader emulates keyboard + Enter)
+    input.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+
+            const raw = input.value.trim();
+            input.value = ''; // reset input
+            if (!raw) return;
+
+            // tampilkan sementara
+            lastScanEl.textContent = `Terbaca: ${raw}`;
+            statusEl.textContent = 'Memproses...';
+            statusEl.className = 'text-sm px-3 py-1 rounded bg-amber-100 text-amber-800';
+
+            try {
+                const res = await fetch('{{ url('/api/absensi/tap') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        ...(csrfToken ? {'X-CSRF-TOKEN': csrfToken} : {}),
+                    },
+                    body: JSON.stringify({ rfid_uid: raw })
+                });
+
+                const data = await res.json().catch(() => ({}));
+
+                // handle 'unregistered' explicitly (server returns 200 with status 'unregistered')
+                if (data && data.status === 'unregistered') {
+                    statusEl.textContent = data.message || 'Kartu belum terdaftar';
+                    statusEl.className = 'text-sm px-3 py-1 rounded bg-red-100 text-red-700';
+                    lastScanEl.textContent = `Terbaca: ${raw} — belum terdaftar`;
+                    showToast('Kartu belum terdaftar', 'warning');
+
+                    // update badge/list
+                    await fetchPending();
+                } else if (res.ok) {
+                    // normal success: check_in / check_out
+                    statusEl.textContent = data.message || 'Tercatat';
+                    statusEl.className = 'text-sm px-3 py-1 rounded bg-green-100 text-green-800';
+                    lastScanEl.textContent = `Terbaca: ${raw} — ${data.status ?? ''}`;
+
+                    // refresh monitoring table to show new data
+                    const autoRefresh = true;
+                    if (autoRefresh) {
+                        setTimeout(() => { window.location.reload(); }, 700);
+                    }
+                } else {
+                    // other errors (e.g. rejected 409)
+                    statusEl.textContent = data.message || 'Terjadi error';
+                    statusEl.className = 'text-sm px-3 py-1 rounded bg-red-100 text-red-700';
+                    lastScanEl.textContent = `Terbaca: ${raw} — ${data.message ?? 'Error'}`;
+                    showToast(data.message || 'Terjadi error', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                statusEl.textContent = 'Gagal kirim ke server';
+                statusEl.className = 'text-sm px-3 py-1 rounded bg-red-100 text-red-700';
+                lastScanEl.textContent = `Terbaca: ${raw} — (gagal koneksi)`;
+                showToast('Gagal koneksi ke server', 'error');
+            } finally {
+                // fokus kembali
+                setTimeout(() => input.focus(), 100);
+            }
+        }
+    });
+
+    // smarter click handler: only refocus RFID input when user didn't click a form control,
+    // the bell dropdown, or when SweetAlert2 is open. This prevents stealing focus
+    // from search input or SweetAlert2 modals.
+    document.addEventListener('click', (e) => {
+        try {
+            // if SweetAlert2 modal is open, DON'T refocus
+            if (typeof Swal !== 'undefined' && Swal.isVisible && Swal.isVisible()) {
+                return;
+            }
+
+            // if click was inside bell dropdown (so user interacts with items) DON'T refocus
+            if (e.target.closest && e.target.closest('#bell-dropdown')) {
+                return;
+            }
+
+            // if click was inside any form control (input, textarea, select, button) DON'T refocus
+            if (e.target.closest && e.target.closest('input, textarea, select, button, [contenteditable="true"]')) {
+                return;
+            }
+
+            // otherwise it's safe to keep focus on the RFID input
+            if (document.activeElement !== input) {
+                input.focus();
+            }
+        } catch (err) {
+            // fail-safe: don't break app if something unexpected happens
+            console.error('focus handler error', err);
+        }
+    });
+
 });
 </script>
-
 </html>
